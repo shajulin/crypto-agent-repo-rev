@@ -1,0 +1,95 @@
+# Auto-generated: extends distributed/docker-compose.yml to 20 devices.
+# Usage: docker compose -f distributed/docker-compose.yml -f distributed/docker-compose.20.yml up --build -d
+services:
+  aggregator:
+    environment: {EXPECTED_DEVICES: '20'}
+  dev6:
+    build: {context: .., dockerfile: distributed/Dockerfile}
+    image: iiot-node:latest
+    depends_on: [mqtt]
+    environment: {DEVICE_ID: dev6, DEVICE_TYPE: ESP32}
+    command: ["python", "distributed/device_agent.py"]
+  dev7:
+    build: {context: .., dockerfile: distributed/Dockerfile}
+    image: iiot-node:latest
+    depends_on: [mqtt]
+    environment: {DEVICE_ID: dev7, DEVICE_TYPE: ESP32-S3}
+    command: ["python", "distributed/device_agent.py"]
+  dev8:
+    build: {context: .., dockerfile: distributed/Dockerfile}
+    image: iiot-node:latest
+    depends_on: [mqtt]
+    environment: {DEVICE_ID: dev8, DEVICE_TYPE: RaspberryPi}
+    command: ["python", "distributed/device_agent.py"]
+  dev9:
+    build: {context: .., dockerfile: distributed/Dockerfile}
+    image: iiot-node:latest
+    depends_on: [mqtt]
+    environment: {DEVICE_ID: dev9, DEVICE_TYPE: RaspberryPi}
+    command: ["python", "distributed/device_agent.py"]
+  dev10:
+    build: {context: .., dockerfile: distributed/Dockerfile}
+    image: iiot-node:latest
+    depends_on: [mqtt]
+    environment: {DEVICE_ID: dev10, DEVICE_TYPE: ESP32}
+    command: ["python", "distributed/device_agent.py"]
+  dev11:
+    build: {context: .., dockerfile: distributed/Dockerfile}
+    image: iiot-node:latest
+    depends_on: [mqtt]
+    environment: {DEVICE_ID: dev11, DEVICE_TYPE: ESP32}
+    command: ["python", "distributed/device_agent.py"]
+  dev12:
+    build: {context: .., dockerfile: distributed/Dockerfile}
+    image: iiot-node:latest
+    depends_on: [mqtt]
+    environment: {DEVICE_ID: dev12, DEVICE_TYPE: ESP32-S3}
+    command: ["python", "distributed/device_agent.py"]
+  dev13:
+    build: {context: .., dockerfile: distributed/Dockerfile}
+    image: iiot-node:latest
+    depends_on: [mqtt]
+    environment: {DEVICE_ID: dev13, DEVICE_TYPE: RaspberryPi}
+    command: ["python", "distributed/device_agent.py"]
+  dev14:
+    build: {context: .., dockerfile: distributed/Dockerfile}
+    image: iiot-node:latest
+    depends_on: [mqtt]
+    environment: {DEVICE_ID: dev14, DEVICE_TYPE: RaspberryPi}
+    command: ["python", "distributed/device_agent.py"]
+  dev15:
+    build: {context: .., dockerfile: distributed/Dockerfile}
+    image: iiot-node:latest
+    depends_on: [mqtt]
+    environment: {DEVICE_ID: dev15, DEVICE_TYPE: ESP32}
+    command: ["python", "distributed/device_agent.py"]
+  dev16:
+    build: {context: .., dockerfile: distributed/Dockerfile}
+    image: iiot-node:latest
+    depends_on: [mqtt]
+    environment: {DEVICE_ID: dev16, DEVICE_TYPE: ESP32}
+    command: ["python", "distributed/device_agent.py"]
+  dev17:
+    build: {context: .., dockerfile: distributed/Dockerfile}
+    image: iiot-node:latest
+    depends_on: [mqtt]
+    environment: {DEVICE_ID: dev17, DEVICE_TYPE: ESP32-S3}
+    command: ["python", "distributed/device_agent.py"]
+  dev18:
+    build: {context: .., dockerfile: distributed/Dockerfile}
+    image: iiot-node:latest
+    depends_on: [mqtt]
+    environment: {DEVICE_ID: dev18, DEVICE_TYPE: RaspberryPi}
+    command: ["python", "distributed/device_agent.py"]
+  dev19:
+    build: {context: .., dockerfile: distributed/Dockerfile}
+    image: iiot-node:latest
+    depends_on: [mqtt]
+    environment: {DEVICE_ID: dev19, DEVICE_TYPE: RaspberryPi}
+    command: ["python", "distributed/device_agent.py"]
+  dev20:
+    build: {context: .., dockerfile: distributed/Dockerfile}
+    image: iiot-node:latest
+    depends_on: [mqtt]
+    environment: {DEVICE_ID: dev20, DEVICE_TYPE: ESP32}
+    command: ["python", "distributed/device_agent.py"]

@@ -1,0 +1,50 @@
+# Real multi-container run (self-contained: no external data needed).
+#   * 5 device services: each performs REAL crypto/RNG inspection for its device
+#     and writes results/device_<id>.json  (Module 1, one container per device).
+#   * aggregator: waits for all 5, then runs Modules 2-7 (incl. the crypto-posture
+#     testbed) on the real per-device results and renders all figures/report.
+#
+# Run from the crypto/ directory:
+#   docker compose -f docker/docker-compose.yml up --build --abort-on-container-exit
+
+x-device: &device
+  build:
+    context: ..
+    dockerfile: docker/Dockerfile
+  image: crypto-framework:latest
+  environment:
+    CRYPTO_ROLE: device
+  volumes:
+    - ../results:/app/results
+    - ../data:/app/data
+  command: ["python", "run_all.py"]
+
+services:
+  dev1-flame:
+    <<: *device
+    environment: {CRYPTO_ROLE: device, DEVICE_ID: dev1}
+  dev2-ir:
+    <<: *device
+    environment: {CRYPTO_ROLE: device, DEVICE_ID: dev2}
+  dev3-soil:
+    <<: *device
+    environment: {CRYPTO_ROLE: device, DEVICE_ID: dev3}
+  dev4-sound:
+    <<: *device
+    environment: {CRYPTO_ROLE: device, DEVICE_ID: dev4}
+  dev5-temp:
+    <<: *device
+    environment: {CRYPTO_ROLE: device, DEVICE_ID: dev5}
+
+  aggregator:
+    <<: *device
+    environment:
+      CRYPTO_ROLE: aggregator
+      CRYPTO_TESTBED_N: "${CRYPTO_TESTBED_N:-1000}"
+    command: ["python", "run_all.py", "--aggregate"]
+    depends_on:
+      dev1-flame: {condition: service_completed_successfully}
+      dev2-ir: {condition: service_completed_successfully}
+      dev3-soil: {condition: service_completed_successfully}
+      dev4-sound: {condition: service_completed_successfully}
+      dev5-temp: {condition: service_completed_successfully}

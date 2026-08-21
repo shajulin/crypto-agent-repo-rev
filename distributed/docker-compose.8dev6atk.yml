@@ -1,0 +1,176 @@
+# Full stack (Phase 1 + Phase 2) — 8 devices, 6 attacked devices, raised severity.
+# Derived from distributed/docker-compose.yml:
+#   - 8 device containers (dev1..dev8); dev6..dev8 cycle base configs
+#   - aggregator EXPECTED_DEVICES: "8"
+#   - agent-threat ATTACK_TARGETS: "6"  (real attack suite hits 6 random devices)
+#   - severity raised in distributed/agent.py: every successful attack = CRITICAL
+# Run from crypto/:
+#   docker compose -f distributed/docker-compose.8dev6atk.yml up --build -d
+
+x-node: &node
+  build:
+    context: ..
+    dockerfile: distributed/Dockerfile
+  image: iiot-node:latest
+  depends_on: [mqtt]
+
+services:
+  mqtt:
+    image: eclipse-mosquitto:2
+    volumes:
+      - ./mqtt/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+    ports: ["1883:1883"]
+
+  dev1:
+    <<: *node
+    environment: {DEVICE_ID: dev1, DEVICE_TYPE: ESP32}
+    command: ["python", "distributed/device_agent.py"]
+  dev2:
+    <<: *node
+    environment: {DEVICE_ID: dev2, DEVICE_TYPE: ESP32-S3}
+    command: ["python", "distributed/device_agent.py"]
+  dev3:
+    <<: *node
+    environment: {DEVICE_ID: dev3, DEVICE_TYPE: RaspberryPi}
+    command: ["python", "distributed/device_agent.py"]
+  dev4:
+    <<: *node
+    environment: {DEVICE_ID: dev4, DEVICE_TYPE: RaspberryPi}
+    command: ["python", "distributed/device_agent.py"]
+  dev5:
+    <<: *node
+    environment: {DEVICE_ID: dev5, DEVICE_TYPE: ESP32}
+    command: ["python", "distributed/device_agent.py"]
+  dev6:
+    <<: *node
+    environment: {DEVICE_ID: dev6, DEVICE_TYPE: ESP32-S3}
+    command: ["python", "distributed/device_agent.py"]
+  dev7:
+    <<: *node
+    environment: {DEVICE_ID: dev7, DEVICE_TYPE: RaspberryPi}
+    command: ["python", "distributed/device_agent.py"]
+  dev8:
+    <<: *node
+    environment: {DEVICE_ID: dev8, DEVICE_TYPE: ESP32}
+    command: ["python", "distributed/device_agent.py"]
+
+  aggregator:
+    <<: *node
+    environment: {EXPECTED_DEVICES: "8"}
+    command: ["python", "distributed/aggregator.py"]
+    ports: ["8000:8000"]
+    volumes:
+      - ../data:/app/data
+
+  monitor:
+    <<: *node
+    depends_on: [aggregator]
+    environment:
+      AGGREGATOR_URL: http://aggregator:8000
+      MONITOR_SAMPLES: "10"
+      MONITOR_INTERVAL: "4"
+    command: ["python", "distributed/monitor.py"]
+    volumes:
+      - ../data:/app/data
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  # ---------------- Box 2: agentic plane (Phase 2) ----------------
+  ollama:
+    image: ollama/ollama:latest
+    entrypoint: ["/bin/sh", "-c",
+                 "ollama serve & sleep 8 && (ollama pull llama3.2:3b || true) && wait"]
+    volumes:
+      - ollama_models:/root/.ollama
+    ports: ["11434:11434"]
+
+  agent-config:
+    <<: *node
+    depends_on: [aggregator]
+    environment: {AGENT_ROLE: config, FRAMEWORK: own, AGGREGATOR_URL: "http://aggregator:8000"}
+    command: ["python", "distributed/agent.py"]
+    volumes: ["../data:/app/data"]
+  agent-crypto:
+    <<: *node
+    depends_on: [aggregator]
+    environment: {AGENT_ROLE: crypto, FRAMEWORK: own, AGGREGATOR_URL: "http://aggregator:8000"}
+    command: ["python", "distributed/agent.py"]
+    volumes: ["../data:/app/data"]
+  agent-threat:
+    <<: *node
+    depends_on:
+      agent-crypto: {condition: service_completed_successfully}
+    environment:
+      AGENT_ROLE: threat
+      FRAMEWORK: own
+      AGGREGATOR_URL: "http://aggregator:8000"
+      ATTACK_TARGETS: "6"
+    command: ["python", "distributed/agent.py"]
+    volumes: ["../data:/app/data"]
+  agent-xai:
+    <<: *node
+    depends_on:
+      agent-threat: {condition: service_completed_successfully}
+      ollama: {condition: service_started}
+    environment:
+      AGENT_ROLE: xai
+      FRAMEWORK: own
+      AGGREGATOR_URL: "http://aggregator:8000"
+      OLLAMA_BASE_URL: "http://ollama:11434"
+      OLLAMA_MODEL: "llama3.2:3b"
+    command: ["python", "distributed/agent.py"]
+    volumes: ["../data:/app/data"]
+  agent-kg:
+    <<: *node
+    depends_on:
+      agent-xai: {condition: service_completed_successfully}
+    environment: {AGENT_ROLE: kg, FRAMEWORK: own, AGGREGATOR_URL: "http://aggregator:8000"}
+    command: ["python", "distributed/agent.py"]
+    volumes: ["../data:/app/data"]
+  agent-recommend:
+    <<: *node
+    depends_on:
+      agent-kg: {condition: service_completed_successfully}
+    environment: {AGENT_ROLE: recommend, FRAMEWORK: own, AGGREGATOR_URL: "http://aggregator:8000"}
+    command: ["python", "distributed/agent.py"]
+    volumes: ["../data:/app/data"]
+  agent-report:
+    <<: *node
+    depends_on:
+      agent-recommend: {condition: service_completed_successfully}
+    environment: {AGENT_ROLE: report, FRAMEWORK: own, AGGREGATOR_URL: "http://aggregator:8000"}
+    command: ["python", "distributed/agent.py"]
+    volumes: ["../data:/app/data"]
+  agent-compare:
+    <<: *node
+    depends_on: [aggregator, ollama]
+    environment:
+      AGENT_ROLE: compare
+      FRAMEWORK: own
+      AGGREGATOR_URL: "http://aggregator:8000"
+      OLLAMA_BASE_URL: "http://ollama:11434"
+      OLLAMA_MODEL: "llama3.2:3b"
+    command: ["python", "distributed/agent.py"]
+    volumes: ["../data:/app/data"]
+
+  # ---- real framework containers (write data/frameworks/<fw>_result.json) ----
+  crewai:
+    build:
+      context: ..
+      dockerfile: distributed/Dockerfile.crewai
+    depends_on: [ollama]
+    environment:
+      OLLAMA_BASE_URL: "http://ollama:11434"
+      OLLAMA_MODEL: "llama3.2:3b"
+      CREWAI_TRACING_ENABLED: "false"
+      OTEL_SDK_DISABLED: "true"
+    volumes: ["../data:/app/data"]
+  akka:
+    image: sbtscala/scala-sbt:eclipse-temurin-jammy-17.0.10_7_1.9.9_2.13.13
+    working_dir: /project
+    volumes:
+      - ../multi_agent_experiments/akka_framework:/project
+      - ../data:/data
+    command: ["bash", "/project/run_with_mem.sh"]
+
+volumes:
+  ollama_models:

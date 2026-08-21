@@ -1,0 +1,6 @@
+# Real CrewAI runner container.
+FROM python:3.11-slim
+WORKDIR /app
+RUN pip install --no-cache-dir crewai psutil
+COPY distributed/crewai_runner.py /app/distributed/crewai_runner.py
+CMD ["python", "distributed/crewai_runner.py"]

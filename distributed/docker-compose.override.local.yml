@@ -1,0 +1,9 @@
+# Local-only override (not part of the tracked pipeline): the native Windows
+# Ollama service already owns host port 11434, so the compose ollama
+# service's host-port mapping would fail to bind. Agent containers reach it
+# via the internal DNS name "ollama:11434" regardless of this mapping -- this
+# only changes the HOST-exposed port, so it does not affect inter-container
+# communication.
+services:
+  ollama:
+    ports: ["21434:11434"]
